@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "android-static-agent"
+version = "0.1.0"
+description = "Explainable static analysis agent for Android projects"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+ai = ["openai>=2"]
+
+[project.scripts]
+android-static-agent = "android_static_agent.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -1,0 +1,38 @@
+# Copy to the Android application's .github/workflows/android-static-analysis.yml.
+# Replace OWNER/REPOSITORY with the repository containing this agent and pin a release tag.
+name: Android static analysis
+on: [pull_request]
+permissions:
+  contents: read
+  security-events: write
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      # Set up Semgrep and Gitleaks here if your organization requires them.
+      - uses: OWNER/REPOSITORY@v1
+        with:
+          path: .
+          run-tools: 'true'
+          changed-only: 'true'
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: android-static-agent.sarif
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: android-static-analysis
+          path: |
+            android-static-agent.sarif
+            android-static-agent.md

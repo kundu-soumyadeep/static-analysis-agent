@@ -1,0 +1,6 @@
+{
+  "fail_on": "high",
+  "ignore_paths": ["**/build/**", "**/generated/**", "**/src/test/**"],
+  "ignore_rules": [],
+  "baseline": []
+}

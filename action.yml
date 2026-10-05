@@ -1,0 +1,52 @@
+name: Android Static Analysis Agent
+description: Run the agent against the checked-out Android application.
+inputs:
+  path:
+    description: Path to the Android application in the CI workspace.
+    required: false
+    default: .
+  run-tools:
+    description: Run Gradle Lint/Detekt and installed Semgrep/Gitleaks binaries.
+    required: false
+    default: 'true'
+  changed-only:
+    description: Limit output to files changed by the last commit.
+    required: false
+    default: 'true'
+  policy:
+    description: Optional path to the Android application's policy JSON.
+    required: false
+    default: ''
+  sarif-file:
+    description: SARIF path relative to the Android application.
+    required: false
+    default: android-static-agent.sarif
+  markdown-file:
+    description: Markdown path relative to the Android application.
+    required: false
+    default: android-static-agent.md
+outputs:
+  sarif-file:
+    description: SARIF path relative to the Android application.
+    value: ${{ inputs.sarif-file }}
+  markdown-file:
+    description: Markdown path relative to the Android application.
+    value: ${{ inputs.markdown-file }}
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        APP_PATH: ${{ inputs.path }}
+        POLICY_PATH: ${{ inputs.policy }}
+        RUN_TOOLS: ${{ inputs.run-tools }}
+        CHANGED_ONLY: ${{ inputs.changed-only }}
+        SARIF_FILE: ${{ inputs.sarif-file }}
+        MARKDOWN_FILE: ${{ inputs.markdown-file }}
+      run: |
+        python -m pip install "$GITHUB_ACTION_PATH"
+        args=("$APP_PATH" --format markdown --output "$APP_PATH/$MARKDOWN_FILE" --sarif "$APP_PATH/$SARIF_FILE")
+        if [ "$RUN_TOOLS" = "true" ]; then args+=(--run-tools); fi
+        if [ "$CHANGED_ONLY" = "true" ]; then args+=(--changed-only); fi
+        if [ -n "$POLICY_PATH" ]; then args+=(--policy "$POLICY_PATH"); fi
+        android-static-agent "${args[@]}"
