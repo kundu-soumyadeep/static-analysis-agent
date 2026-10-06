@@ -17,6 +17,10 @@ inputs:
     description: Optional path to the Android application's policy JSON.
     required: false
     default: ''
+  rules:
+    description: Optional path to the Android application's additional or replacement rules JSON.
+    required: false
+    default: ''
   sarif-file:
     description: SARIF path relative to the Android application.
     required: false
@@ -39,6 +43,7 @@ runs:
       env:
         APP_PATH: ${{ inputs.path }}
         POLICY_PATH: ${{ inputs.policy }}
+        RULES_PATH: ${{ inputs.rules }}
         RUN_TOOLS: ${{ inputs.run-tools }}
         CHANGED_ONLY: ${{ inputs.changed-only }}
         SARIF_FILE: ${{ inputs.sarif-file }}
@@ -49,4 +54,5 @@ runs:
         if [ "$RUN_TOOLS" = "true" ]; then args+=(--run-tools); fi
         if [ "$CHANGED_ONLY" = "true" ]; then args+=(--changed-only); fi
         if [ -n "$POLICY_PATH" ]; then args+=(--policy "$POLICY_PATH"); fi
+        if [ -n "$RULES_PATH" ]; then args+=(--rules "$RULES_PATH"); fi
         android-static-agent "${args[@]}"

@@ -16,6 +16,7 @@ def main() -> int:
                         help="Write the report to a file instead of stdout")
     parser.add_argument("--sarif", type=Path, help="Write normalized SARIF 2.1.0")
     parser.add_argument("--policy", type=Path, help="Policy JSON; defaults to .android-static-agent/policy.json")
+    parser.add_argument("--rules", type=Path, help="Additional or replacement declarative rules JSON")
     parser.add_argument("--report", type=Path, action="append", default=[], help="Existing Lint, Detekt, Semgrep, Gitleaks, or SARIF report")
     parser.add_argument("--run-tools", action="store_true", help="Run configured Gradle tools plus installed Semgrep/Gitleaks")
     parser.add_argument("--changed-only", action="store_true", help="Restrict output to files changed in the last Git commit")
@@ -28,7 +29,7 @@ def main() -> int:
 
     result = AnalysisAgent().analyze(root, policy_path=args.policy,
         report_paths=[path.resolve() for path in args.report], run_external_tools=args.run_tools,
-        changed_only=args.changed_only, ai_model=args.ai_model)
+        changed_only=args.changed_only, ai_model=args.ai_model, rules_path=args.rules)
     report = _render(root, result.findings, args.output_format, result.warnings)
     if args.output:
         args.output.write_text(report + "\n", encoding="utf-8")

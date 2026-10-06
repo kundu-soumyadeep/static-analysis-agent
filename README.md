@@ -81,6 +81,15 @@ ignored paths, ignored rules, and a baseline of finding fingerprints. Copy it to
 the Android repository being scanned and commit it with your coding standards.
 Baselines should be temporary: remove entries as existing debt is fixed.
 
+## Extend the rule catalog
+
+Rules are declarative and live in
+`src/android_static_agent/rules/android-rules.json`. They are not hardcoded in
+the scanner. Each Android application can add organization-specific rules or
+replace a built-in rule with `--rules .android-static-agent/rules.json`.
+See [RULES.md](RULES.md) for the complete schema, supported rule kinds, and
+examples.
+
 ## Optional AI review
 
 The agent can ask an OpenAI Responses model to assign confidence and write a

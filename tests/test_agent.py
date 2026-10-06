@@ -46,3 +46,16 @@ class AgentTests(unittest.TestCase):
             (root / "A.kt").write_text("var exposed = 1\nfun f() { val unused = 1 }", encoding="utf-8")
             rules = {item.rule_id for item in AnalysisAgent().analyze(root).findings}
             self.assertIn("ANDROID-QUALITY-004", rules)
+
+    def test_custom_rules_extend_and_replace_the_default_bundle(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "A.kt").write_text("// TEAM_MARKER\n", encoding="utf-8")
+            bundle = root / "rules.json"
+            bundle.write_text(json.dumps({"version": 1, "rules": [{
+                "id": "ORG-001", "kind": "regex", "severity": "low",
+                "title": "Team marker", "message": "Matched {match}",
+                "remediation": "Remove the marker.", "pattern": "TEAM_MARKER",
+                "extensions": [".kt"]}]}), encoding="utf-8")
+            result = AnalysisAgent().analyze(root, rules_path=bundle)
+            self.assertEqual([item.rule_id for item in result.findings], ["ORG-001"])

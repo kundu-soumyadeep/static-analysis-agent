@@ -24,9 +24,10 @@ class AnalysisResult:
 class AnalysisAgent:
     def analyze(self, root: Path, *, policy_path: Path | None = None,
                 report_paths: list[Path] | None = None, run_external_tools: bool = False,
-                changed_only: bool = False, ai_model: str | None = None) -> AnalysisResult:
+                changed_only: bool = False, ai_model: str | None = None,
+                rules_path: Path | None = None) -> AnalysisResult:
         policy = Policy.load(policy_path, root)
-        findings = AndroidAnalyzer().analyze(root, include_heuristics=True)
+        findings = AndroidAnalyzer(rules_path).analyze(root, include_heuristics=True)
         warnings: list[str] = []
         tool_runs: list[ToolRun] = []
         if run_external_tools:

@@ -1,0 +1,107 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "id": "ANDROID-SEC-001",
+      "kind": "remote_http",
+      "severity": "high",
+      "title": "Cleartext HTTP URL",
+      "message": "Matched {match}",
+      "remediation": "Use HTTPS or an explicitly justified secure local endpoint.",
+      "pattern": "\\bhttp://[^\\s\\\"'<>]+"
+    },
+    {
+      "id": "ANDROID-SEC-002",
+      "kind": "hardcoded_secret",
+      "severity": "high",
+      "title": "Potential hardcoded secret",
+      "message": "Potential hardcoded {name} [REDACTED]",
+      "remediation": "Move secrets to a secure runtime mechanism and rotate exposed credentials.",
+      "pattern": "\\b(api[_-]?key|secret|password|token)\\s*[:=]\\s*['\\\"][^'\\\"]{8,}['\\\"]"
+    },
+    {
+      "id": "ANDROID-QUALITY-001",
+      "kind": "regex",
+      "severity": "medium",
+      "title": "Logging call requires review",
+      "message": "Matched {match}",
+      "remediation": "Remove sensitive or noisy logs before release, or gate them behind a debug build.",
+      "pattern": "\\b(Log\\.[divew]|println)\\s*\\("
+    },
+    {
+      "id": "ANDROID-QUALITY-003",
+      "kind": "unused_assignment",
+      "severity": "medium",
+      "title": "Potential unused local variable",
+      "message": "`{name}` is assigned but is not referenced later in this file.",
+      "remediation": "Remove it, use it, or suppress this finding when a framework accesses it indirectly.",
+      "pattern": "^\\s*(?:val|var|final\\s+\\S+|\\S+)\\s+(\\w+)\\s*=",
+      "extensions": [".kt", ".java"],
+      "heuristic": true,
+      "confidence": "medium"
+    },
+    {
+      "id": "ANDROID-QUALITY-004",
+      "kind": "exposed_mutable",
+      "severity": "medium",
+      "title": "Exposed mutable Kotlin property",
+      "message": "A mutable property has no private visibility modifier.",
+      "remediation": "Prefer private state with an immutable public view.",
+      "pattern": "^\\s*(?:public\\s+)?var\\s+\\w+",
+      "extensions": [".kt"],
+      "heuristic": true,
+      "confidence": "medium",
+      "excludes": "private"
+    },
+    {
+      "id": "ANDROID-SEC-005",
+      "kind": "regex",
+      "severity": "medium",
+      "title": "WebView JavaScript enabled",
+      "message": "JavaScript execution increases WebView attack surface.",
+      "remediation": "Enable it only for trusted content and restrict navigation and bridges.",
+      "pattern": "setJavaScriptEnabled\\s*\\(\\s*true\\s*\\)",
+      "extensions": [".kt", ".java"],
+      "heuristic": true
+    },
+    {
+      "id": "ANDROID-SEC-006",
+      "kind": "regex",
+      "severity": "medium",
+      "title": "Custom TLS validation requires review",
+      "message": "Custom certificate or hostname validation can disable TLS protections.",
+      "remediation": "Use platform TLS validation unless a documented pinning design requires customization.",
+      "pattern": "X509TrustManager|HostnameVerifier",
+      "extensions": [".kt", ".java"],
+      "heuristic": true,
+      "confidence": "medium"
+    },
+    {
+      "id": "ANDROID-SEC-003",
+      "kind": "manifest_attribute_true",
+      "severity": "high",
+      "title": "Debuggable application",
+      "message": "Application declares android:{attribute}=true; review the intended build variant.",
+      "remediation": "Confirm the release merged manifest sets android:debuggable to false.",
+      "attribute": "debuggable"
+    },
+    {
+      "id": "ANDROID-SEC-004",
+      "kind": "manifest_attribute_true",
+      "severity": "medium",
+      "title": "Cleartext traffic opt-in",
+      "message": "Application declares android:{attribute}=true; review the intended build variant.",
+      "remediation": "Review network security configuration and disable unnecessary cleartext traffic.",
+      "attribute": "usesCleartextTraffic"
+    },
+    {
+      "id": "ANDROID-QUALITY-002",
+      "kind": "manifest_attribute_true",
+      "severity": "medium",
+      "title": "Test-only application",
+      "message": "Application declares android:{attribute}=true; review the intended build variant.",
+      "remediation": "Remove android:testOnly from production manifests; keep it only in test builds.",
+      "attribute": "testOnly"
+    }
+  ]
+}
