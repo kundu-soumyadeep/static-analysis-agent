@@ -50,7 +50,8 @@ def parse_xml(path: Path, root: Path) -> list[Finding]:
         for issue in report.findall("issue"):
             location = issue.find("location")
             if location is not None:
-                findings.append(Finding(issue.get("id", "ANDROID-LINT"), _severity(issue.get("severity")), issue.get("brief", "Android Lint finding"), issue.get("message", "Android Lint finding"), _relative(location.get("file", ""), root), int(location.get("line", "1")), "", "Review Android Lint guidance and remediate the issue.", tool, "high"))
+                remediation = issue.get("explanation") or "Review Android Lint guidance and remediate the issue."
+                findings.append(Finding(issue.get("id", "ANDROID-LINT"), _severity(issue.get("severity")), issue.get("brief", "Android Lint finding"), issue.get("message", "Android Lint finding"), _relative(location.get("file", ""), root), int(location.get("line", "1")), "", remediation, tool, "high"))
     else:
         for finding in report.findall("finding"):
             entity = finding.get("entity", "")

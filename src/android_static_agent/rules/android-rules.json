@@ -6,9 +6,10 @@
       "kind": "remote_http",
       "severity": "high",
       "title": "Cleartext HTTP URL",
-      "message": "Matched {match}",
-      "remediation": "Use HTTPS or an explicitly justified secure local endpoint.",
-      "pattern": "\\bhttp://[^\\s\\\"'<>]+"
+      "message": "Cleartext endpoint `{match}` can expose network traffic to interception or modification.",
+      "remediation": "Replace the endpoint with HTTPS. If HTTP is required for local development, put it in a debug-only configuration and document the exception.",
+      "pattern": "\\bhttp://[^\\s\\\"'<>]+",
+      "extensions": [".kt", ".java", ".kts"]
     },
     {
       "id": "ANDROID-SEC-002",
@@ -24,9 +25,10 @@
       "kind": "regex",
       "severity": "medium",
       "title": "Logging call requires review",
-      "message": "Matched {match}",
-      "remediation": "Remove sensitive or noisy logs before release, or gate them behind a debug build.",
-      "pattern": "\\b(Log\\.[divew]|println)\\s*\\("
+      "message": "Production logging call `{match}` may expose sensitive data or create unnecessary release noise.",
+      "remediation": "Remove the log, redact sensitive values, or guard it behind a debug-only build configuration.",
+      "pattern": "\\b(Log\\.[divew]|println)\\s*\\(",
+      "extensions": [".kt", ".java"]
     },
     {
       "id": "ANDROID-QUALITY-003",

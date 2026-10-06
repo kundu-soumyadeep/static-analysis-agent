@@ -33,7 +33,9 @@ class AnalysisAgent:
         if run_external_tools:
             tool_runs = run_tools(root)
             for tool in tool_runs:
-                if tool.available and tool.exit_code not in (0, 1):
+                if not tool.available:
+                    warnings.append(f"{tool.name} skipped: {tool.detail}.")
+                elif tool.exit_code not in (0, 1):
                     warnings.append(f"{tool.name} exited {tool.exit_code}; its report may be incomplete.")
         paths = report_paths or self._discover_reports(root)
         for path in paths:

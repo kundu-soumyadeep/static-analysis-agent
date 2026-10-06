@@ -7,6 +7,8 @@ from android_static_agent.adapters import parse_report
 from android_static_agent.orchestrator import AnalysisAgent
 from android_static_agent.policy import Policy
 from android_static_agent.reports import markdown_summary, write_sarif
+from android_static_agent.runner import ToolRun
+from android_static_agent import runner
 
 
 class AgentTests(unittest.TestCase):
@@ -40,6 +42,15 @@ class AgentTests(unittest.TestCase):
             self.assertTrue(result.warnings)
             self.assertIn("ANDROID-SEC-001", markdown_summary(result.findings))
 
+    def test_markdown_includes_source_and_remediation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "A.kt").write_text('val endpoint = "http://example.com"', encoding="utf-8")
+            report = markdown_summary(AnalysisAgent().analyze(root).findings)
+            self.assertIn("## Finding details", report)
+            self.assertIn("**Source:** built-in", report)
+            self.assertIn("**Recommended action:**", report)
+
     def test_unused_and_exposed_property_rules(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -59,3 +70,22 @@ class AgentTests(unittest.TestCase):
                 "extensions": [".kt"]}]}), encoding="utf-8")
             result = AnalysisAgent().analyze(root, rules_path=bundle)
             self.assertEqual([item.rule_id for item in result.findings], ["ORG-001"])
+
+    def test_skipped_external_tool_is_reported_as_a_warning(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "A.kt").write_text("class A", encoding="utf-8")
+            from unittest.mock import patch
+            with patch("android_static_agent.orchestrator.run_tools", return_value=[
+                ToolRun("Detekt", ["./gradlew", "detekt"], False, detail="not configured")]):
+                result = AnalysisAgent().analyze(root, run_external_tools=True)
+            self.assertEqual(result.warnings, ["Detekt skipped: not configured."])
+
+    def test_semgrep_command_has_an_explicit_project_target(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            from unittest.mock import patch
+            with patch("android_static_agent.runner.shutil.which", return_value=None):
+                tools = runner.run_tools(root)
+            semgrep = next(tool for tool in tools if tool.name == "Semgrep")
+            self.assertEqual(semgrep.command[-1], ".")

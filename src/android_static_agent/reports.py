@@ -20,10 +20,24 @@ def write_sarif(findings: list[Finding], destination: Path) -> None:
 def markdown_summary(findings: list[Finding]) -> str:
     if not findings:
         return "## Android static analysis\n\nNo findings after policy and baseline filtering."
-    lines = ["## Android static analysis", "", f"{len(findings)} finding(s) after policy and baseline filtering.", "", "| Severity | Rule | Location | Finding |", "| --- | --- | --- | --- |"]
+    lines = ["## Android static analysis", "", f"{len(findings)} finding(s) after policy and baseline filtering.", "", "| Severity | Rule | Location | Summary |", "| --- | --- | --- | --- |"]
     for item in findings:
         message = item.message.replace("|", "\\|")
         lines.append(f"| {item.severity} | `{item.rule_id}` | `{item.file}:{item.line}` | {message} |")
+    lines.extend(["", "## Finding details"])
+    for item in findings:
+        lines.extend([
+            "",
+            f"### [{item.severity.upper()}] {item.rule_id} — {item.title}",
+            f"**Location:** `{item.file}:{item.line}`  ",
+            f"**Source:** {item.source_tool} · confidence: {item.confidence}",
+            "",
+            f"**Finding:** {item.message}",
+            "",
+            f"**Recommended action:** {item.remediation}",
+        ])
+        if item.evidence:
+            lines.extend(["", "**Evidence:**", "", "```text", item.evidence, "```"])
     return "\n".join(lines)
 
 

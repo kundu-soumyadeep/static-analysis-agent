@@ -1,6 +1,6 @@
 {
   "fail_on": "high",
-  "ignore_paths": ["**/build/**", "**/generated/**", "**/src/test/**"],
+  "ignore_paths": ["**/build/**", "**/generated/**", "**/src/test/**", "**/src/androidTest/**", "**/src/testFixtures/**"],
   "ignore_rules": [],
   "baseline": []
 }

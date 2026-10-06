@@ -14,7 +14,7 @@ SEVERITY_ORDER = {"info": 0, "low": 1, "medium": 2, "high": 3, "critical": 4}
 @dataclass
 class Policy:
     fail_on: str = "high"
-    ignored_paths: list[str] = field(default_factory=lambda: ["**/build/**", "**/generated/**", "**/src/test/**"])
+    ignored_paths: list[str] = field(default_factory=lambda: ["**/build/**", "**/generated/**", "**/src/test/**", "**/src/androidTest/**", "**/src/testFixtures/**"])
     ignored_rules: set[str] = field(default_factory=set)
     baseline: set[str] = field(default_factory=set)
 
