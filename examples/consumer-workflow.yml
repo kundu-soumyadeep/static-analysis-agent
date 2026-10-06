@@ -21,10 +21,13 @@ jobs:
           python-version: '3.12'
       # Set up Semgrep and Gitleaks here if your organization requires them.
       - uses: OWNER/REPOSITORY@v1
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         with:
           path: .
           run-tools: 'true'
           changed-only: 'true'
+          gemini-model: gemini-3.5-flash-lite
       - uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:

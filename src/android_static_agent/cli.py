@@ -20,7 +20,7 @@ def main() -> int:
     parser.add_argument("--report", type=Path, action="append", default=[], help="Existing Lint, Detekt, Semgrep, Gitleaks, or SARIF report")
     parser.add_argument("--run-tools", action="store_true", help="Run configured Gradle tools plus installed Semgrep/Gitleaks")
     parser.add_argument("--changed-only", action="store_true", help="Restrict output to files changed in the last Git commit")
-    parser.add_argument("--ai-model", help="Optional OpenAI Responses model for explanatory triage")
+    parser.add_argument("--gemini-model", help="Optional Gemini model for explanatory triage")
     args = parser.parse_args()
 
     root = args.path.resolve()
@@ -29,7 +29,7 @@ def main() -> int:
 
     result = AnalysisAgent().analyze(root, policy_path=args.policy,
         report_paths=[path.resolve() for path in args.report], run_external_tools=args.run_tools,
-        changed_only=args.changed_only, ai_model=args.ai_model, rules_path=args.rules)
+        changed_only=args.changed_only, gemini_model=args.gemini_model, rules_path=args.rules)
     report = _render(root, result.findings, args.output_format, result.warnings)
     if args.output:
         args.output.write_text(report + "\n", encoding="utf-8")

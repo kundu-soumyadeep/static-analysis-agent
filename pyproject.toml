@@ -11,7 +11,7 @@ requires-python = ">=3.10"
 dependencies = []
 
 [project.optional-dependencies]
-ai = ["openai>=2"]
+gemini = ["google-genai>=1"]
 
 [project.scripts]
 android-static-agent = "android_static_agent.cli:main"

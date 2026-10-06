@@ -24,7 +24,7 @@ class AnalysisResult:
 class AnalysisAgent:
     def analyze(self, root: Path, *, policy_path: Path | None = None,
                 report_paths: list[Path] | None = None, run_external_tools: bool = False,
-                changed_only: bool = False, ai_model: str | None = None,
+                changed_only: bool = False, gemini_model: str | None = None,
                 rules_path: Path | None = None) -> AnalysisResult:
         policy = Policy.load(policy_path, root)
         findings = AndroidAnalyzer(rules_path).analyze(root, include_heuristics=True)
@@ -48,11 +48,11 @@ class AnalysisAgent:
                 warnings.append(f"Could not parse {path}: {error}")
         changed = self._changed_files(root, warnings) if changed_only else None
         findings = policy.apply(findings, changed)
-        if ai_model:
+        if gemini_model:
             try:
-                findings = review(findings, root, ai_model)
+                findings = review(findings, root, gemini_model)
             except RuntimeError as error:
-                warnings.append(f"AI review skipped: {error}")
+                warnings.append(f"Gemini review skipped: {error}")
         return AnalysisResult(findings, policy, tool_runs, warnings)
 
     @staticmethod

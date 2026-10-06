@@ -29,6 +29,10 @@ inputs:
     description: Markdown path relative to the Android application.
     required: false
     default: android-static-agent.md
+  gemini-model:
+    description: Optional Gemini model used to explain and assign confidence to findings.
+    required: false
+    default: ''
 outputs:
   sarif-file:
     description: SARIF path relative to the Android application.
@@ -48,11 +52,17 @@ runs:
         CHANGED_ONLY: ${{ inputs.changed-only }}
         SARIF_FILE: ${{ inputs.sarif-file }}
         MARKDOWN_FILE: ${{ inputs.markdown-file }}
+        GEMINI_MODEL: ${{ inputs.gemini-model }}
       run: |
-        python -m pip install "$GITHUB_ACTION_PATH"
+        if [ -n "$GEMINI_MODEL" ]; then
+          python -m pip install "${GITHUB_ACTION_PATH}[gemini]"
+        else
+          python -m pip install "$GITHUB_ACTION_PATH"
+        fi
         args=("$APP_PATH" --format markdown --output "$APP_PATH/$MARKDOWN_FILE" --sarif "$APP_PATH/$SARIF_FILE")
         if [ "$RUN_TOOLS" = "true" ]; then args+=(--run-tools); fi
         if [ "$CHANGED_ONLY" = "true" ]; then args+=(--changed-only); fi
         if [ -n "$POLICY_PATH" ]; then args+=(--policy "$POLICY_PATH"); fi
         if [ -n "$RULES_PATH" ]; then args+=(--rules "$RULES_PATH"); fi
+        if [ -n "$GEMINI_MODEL" ]; then args+=(--gemini-model "$GEMINI_MODEL"); fi
         android-static-agent "${args[@]}"

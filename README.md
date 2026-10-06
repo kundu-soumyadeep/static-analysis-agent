@@ -90,20 +90,24 @@ replace a built-in rule with `--rules .android-static-agent/rules.json`.
 See [RULES.md](RULES.md) for the complete schema, supported rule kinds, and
 examples.
 
-## Optional AI review
+## Optional Gemini review
 
-The agent can ask an OpenAI Responses model to assign confidence and write a
-short explanation for each normalized finding:
+The agent can ask Gemini to assign confidence and write a short explanation for
+each normalized finding:
 
 ```bash
-pip install -e '.[ai]'
-OPENAI_API_KEY=... android-static-agent . --ai-model gpt-5.5
+pip install -e '.[gemini]'
+GEMINI_API_KEY=... android-static-agent . --gemini-model gemini-3.5-flash-lite
 ```
 
-AI review receives finding evidence only and never removes findings, changes
+Gemini review receives finding evidence only and never removes findings, changes
 severity, or changes the CI decision. If the API key, package, or network is
 unavailable, analysis continues with a warning. The integration uses the
-[OpenAI Responses API](https://developers.openai.com/api/reference/responses/overview).
+[Gemini structured output](https://ai.google.dev/gemini-api/docs/structured-output).
+
+When using the reusable GitHub Action, store the key as `GEMINI_API_KEY` in the
+Android application's GitHub Actions secrets and provide a `gemini-model` input.
+The action installs the optional Gemini dependency only when this input is set.
 
 ## Scope and limitations
 

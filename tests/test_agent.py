@@ -9,6 +9,7 @@ from android_static_agent.policy import Policy
 from android_static_agent.reports import markdown_summary, write_sarif
 from android_static_agent.runner import ToolRun
 from android_static_agent import runner
+from android_static_agent.ai_reviewer import review
 
 
 class AgentTests(unittest.TestCase):
@@ -89,3 +90,15 @@ class AgentTests(unittest.TestCase):
                 tools = runner.run_tools(root)
             semgrep = next(tool for tool in tools if tool.name == "Semgrep")
             self.assertEqual(semgrep.command[-1], ".")
+
+    def test_gemini_review_requires_an_api_key(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "A.kt").write_text('val endpoint = "http://example.com"', encoding="utf-8")
+            with self.assertRaisesRegex(RuntimeError, "GEMINI_API_KEY"):
+                review(AnalysisAgent().analyze(root).findings, root, "gemini-3.5-flash-lite")
+
+    def test_gemini_reviewer_disables_function_calling(self):
+        source = (Path(__file__).parents[1] / "src" / "android_static_agent" / "ai_reviewer.py").read_text(encoding="utf-8")
+        self.assertIn("AutomaticFunctionCallingConfig(disable=True)", source)
+        self.assertIn("client.close()", source)
