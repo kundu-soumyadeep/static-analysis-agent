@@ -22,6 +22,7 @@ def main() -> int:
     parser.add_argument("--changed-only", action="store_true", help="Restrict output to files changed in the last Git commit")
     parser.add_argument("--gemini-model", help="Optional Gemini model for explanatory triage")
     parser.add_argument("--pr-comment", type=Path, help="Write a compact pull-request comment in Markdown")
+    parser.add_argument("--source-url", help="Repository blob URL prefix used for finding links in --pr-comment")
     parser.add_argument("--ci", action="store_true", help="Use CI defaults: run tools and write Markdown and SARIF reports")
     args = parser.parse_args()
 
@@ -46,7 +47,7 @@ def main() -> int:
     if args.sarif:
         write_sarif(result.findings, args.sarif)
     if args.pr_comment:
-        args.pr_comment.write_text(pull_request_summary(result.findings, result.suppressed_findings) + "\n", encoding="utf-8")
+        args.pr_comment.write_text(pull_request_summary(result.findings, result.suppressed_findings, args.source_url) + "\n", encoding="utf-8")
     return 1 if result.policy.should_fail(result.findings) else 0
 
 

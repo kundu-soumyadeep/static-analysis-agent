@@ -127,11 +127,13 @@ class AgentTests(unittest.TestCase):
     def test_pull_request_summary_is_compact_and_marks_suppressed_findings(self):
         findings = [Finding("RULE", "medium", "Title", "A | B", "A.kt", 4, "", "Fix") for _ in range(21)]
         suppressed = [Finding("SUPPRESSED", "low", "Title", "", "B.kt", 2, "", "", triage_status="likely_false_positive")]
-        report = pull_request_summary(findings, suppressed)
+        report = pull_request_summary(findings, suppressed, "https://github.example/acme/app/blob/abc123")
         self.assertIn("<!-- android-static-analysis-agent -->", report)
         self.assertIn("Gemini marked **1**", report)
         self.assertIn("21 active finding", report)
         self.assertIn("1 additional", report)
-        self.assertIn("A \\| B", report)
+        self.assertIn("A | B", report)
+        self.assertIn("https://github.example/acme/app/blob/abc123/A.kt#L4", report)
+        self.assertIn('width="64%"', report)
         short_report = pull_request_summary(findings[:1])
         self.assertNotIn("additional finding", short_report)

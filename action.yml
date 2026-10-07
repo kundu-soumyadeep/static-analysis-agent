@@ -67,7 +67,8 @@ runs:
         else
           python -m pip install "$GITHUB_ACTION_PATH"
         fi
-        args=("$APP_PATH" --format markdown --output "$APP_PATH/$MARKDOWN_FILE" --sarif "$APP_PATH/$SARIF_FILE" --pr-comment "$APP_PATH/$COMMENT_FILE")
+        source_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/blob/${GITHUB_SHA}"
+        args=("$APP_PATH" --format markdown --output "$APP_PATH/$MARKDOWN_FILE" --sarif "$APP_PATH/$SARIF_FILE" --pr-comment "$APP_PATH/$COMMENT_FILE" --source-url "$source_url")
         if [ "$RUN_TOOLS" = "true" ]; then args+=(--run-tools); fi
         if [ "$CHANGED_ONLY" = "true" ]; then args+=(--changed-only); fi
         if [ -n "$POLICY_PATH" ]; then args+=(--policy "$POLICY_PATH"); fi

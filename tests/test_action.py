@@ -10,3 +10,4 @@ class CompositeActionTests(unittest.TestCase):
         self.assertIn("--gemini-model", action)
         self.assertIn("comment-file:", action)
         self.assertIn("--pr-comment", action)
+        self.assertIn("--source-url", action)

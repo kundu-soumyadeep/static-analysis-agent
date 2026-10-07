@@ -28,11 +28,13 @@ class AnalysisAgent:
                 changed_only: bool = False, gemini_model: str | None = None,
                 rules_path: Path | None = None) -> AnalysisResult:
         policy = Policy.load(policy_path, root)
-        findings = AndroidAnalyzer(rules_path).analyze(root, include_heuristics=True)
         warnings: list[str] = []
+        changed = self._changed_files(root, warnings) if changed_only else None
+        findings = AndroidAnalyzer(rules_path).analyze(root, include_heuristics=True,
+                                                       selected_files=changed)
         tool_runs: list[ToolRun] = []
         if run_external_tools:
-            tool_runs = run_tools(root)
+            tool_runs = run_tools(root, changed_files=changed)
             for tool in tool_runs:
                 if not tool.available:
                     warnings.append(f"{tool.name} skipped: {tool.detail}.")
@@ -47,7 +49,6 @@ class AnalysisAgent:
                 findings.extend(parse_report(path, root))
             except (OSError, ValueError, KeyError) as error:
                 warnings.append(f"Could not parse {path}: {error}")
-        changed = self._changed_files(root, warnings) if changed_only else None
         findings = policy.apply(findings, changed)
         suppressed_findings: list[Finding] = []
         if gemini_model:

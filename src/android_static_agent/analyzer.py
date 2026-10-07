@@ -18,9 +18,10 @@ class AndroidAnalyzer:
     def __init__(self, rules_path: Path | None = None):
         self.rules = RuleSet.load(rules_path)
 
-    def analyze(self, root: Path, *, include_heuristics: bool = False) -> list[Finding]:
+    def analyze(self, root: Path, *, include_heuristics: bool = False,
+                selected_files: set[str] | None = None) -> list[Finding]:
         findings: list[Finding] = []
-        for path in self._source_files(root):
+        for path in self._source_files(root, selected_files):
             try:
                 text = path.read_text(encoding="utf-8")
             except (OSError, UnicodeDecodeError) as error:
@@ -31,7 +32,18 @@ class AndroidAnalyzer:
                 findings.extend(self._check_manifest(root, path, text, include_heuristics))
         return findings
 
-    def _source_files(self, root: Path) -> Iterable[Path]:
+    def _source_files(self, root: Path, selected_files: set[str] | None = None) -> Iterable[Path]:
+        if selected_files is not None:
+            root_resolved = root.resolve()
+            for filename in sorted(selected_files):
+                path = root / filename
+                try:
+                    path.resolve().relative_to(root_resolved)
+                except ValueError:
+                    continue
+                if path.is_file() and not path.is_symlink() and path.suffix in ANDROID_EXTENSIONS:
+                    yield path
+            return
         ignored = {".git", ".gradle", "build", "node_modules", "venv", ".venv"}
         for directory, directories, files in os.walk(root):
             directories[:] = sorted(d for d in directories if d not in ignored)

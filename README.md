@@ -77,8 +77,17 @@ pull requests and pushes to `main`, uploads Markdown/SARIF artifacts, and keeps
 one compact, updated comment on each pull request. Keep
 `.android-static-agent/policy.json` and any baseline in the Android application
 repository, because the agent loads its policy from the scanned `path`.
-The example scans the whole project on every run. Set `changed-only: 'true'`
-when a faster, last-commit-only report is more useful.
+The example uses `changed-only: 'true'`. Built-in rules and Semgrep inspect
+only changed files; Gitleaks inspects the latest commit range. Android Lint and
+Detekt remain project-level Gradle tasks, then only their findings in changed
+files are published.
+
+On a pull-request run, the workflow updates the comment in that pull request's
+**Conversation** tab. On a push run, it creates a comment on the pushed commit:
+open the repository's **Commits** list and select that commit. Every run also
+writes the compact report to the Actions run's job summary and uploads the full
+Markdown and SARIF files as artifacts. The workflow needs `contents: write`
+for commit comments and `pull-requests: write` for PR comments.
 
 The workflow in this repository tests the agent package only. It does not try
 to scan the agent source as if it were an Android application.

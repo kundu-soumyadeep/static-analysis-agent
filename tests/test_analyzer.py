@@ -90,3 +90,11 @@ val mixed = "http://127.0.0.1" + "http://example.com"
                 'val endpoint = "http://example.com"', encoding="utf-8")
 
             self.assertEqual(AndroidAnalyzer().analyze(Path(directory)), [])
+
+    def test_selected_files_limits_built_in_analysis(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "Changed.kt").write_text('val endpoint = "http://example.com"', encoding="utf-8")
+            (root / "Unchanged.kt").write_text('val endpoint = "http://example.com"', encoding="utf-8")
+            findings = AndroidAnalyzer().analyze(root, selected_files={"Changed.kt"})
+            self.assertEqual({finding.file for finding in findings}, {"Changed.kt"})
