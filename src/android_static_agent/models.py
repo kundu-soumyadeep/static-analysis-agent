@@ -14,6 +14,8 @@ class Finding:
     remediation: str
     source_tool: str = "built-in"
     confidence: str = "high"
+    triage_status: str = "unreviewed"
+    triage_reason: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

@@ -29,6 +29,10 @@ inputs:
     description: Markdown path relative to the Android application.
     required: false
     default: android-static-agent.md
+  comment-file:
+    description: Compact pull-request comment path relative to the Android application.
+    required: false
+    default: android-static-agent-comment.md
   gemini-model:
     description: Optional Gemini model used to explain and assign confidence to findings.
     required: false
@@ -40,6 +44,9 @@ outputs:
   markdown-file:
     description: Markdown path relative to the Android application.
     value: ${{ inputs.markdown-file }}
+  comment-file:
+    description: Compact pull-request comment path relative to the Android application.
+    value: ${{ inputs.comment-file }}
 runs:
   using: composite
   steps:
@@ -52,6 +59,7 @@ runs:
         CHANGED_ONLY: ${{ inputs.changed-only }}
         SARIF_FILE: ${{ inputs.sarif-file }}
         MARKDOWN_FILE: ${{ inputs.markdown-file }}
+        COMMENT_FILE: ${{ inputs.comment-file }}
         GEMINI_MODEL: ${{ inputs.gemini-model }}
       run: |
         if [ -n "$GEMINI_MODEL" ]; then
@@ -59,7 +67,7 @@ runs:
         else
           python -m pip install "$GITHUB_ACTION_PATH"
         fi
-        args=("$APP_PATH" --format markdown --output "$APP_PATH/$MARKDOWN_FILE" --sarif "$APP_PATH/$SARIF_FILE")
+        args=("$APP_PATH" --format markdown --output "$APP_PATH/$MARKDOWN_FILE" --sarif "$APP_PATH/$SARIF_FILE" --pr-comment "$APP_PATH/$COMMENT_FILE")
         if [ "$RUN_TOOLS" = "true" ]; then args+=(--run-tools); fi
         if [ "$CHANGED_ONLY" = "true" ]; then args+=(--changed-only); fi
         if [ -n "$POLICY_PATH" ]; then args+=(--policy "$POLICY_PATH"); fi

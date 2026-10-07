@@ -6,7 +6,7 @@ from pathlib import Path
 import subprocess
 
 from .adapters import parse_report
-from .ai_reviewer import review
+from .ai_reviewer import review, suppress_likely_false_positives
 from .analyzer import AndroidAnalyzer
 from .models import Finding
 from .policy import Policy
@@ -19,6 +19,7 @@ class AnalysisResult:
     policy: Policy
     tool_runs: list[ToolRun] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
+    suppressed_findings: list[Finding] = field(default_factory=list)
 
 
 class AnalysisAgent:
@@ -48,12 +49,16 @@ class AnalysisAgent:
                 warnings.append(f"Could not parse {path}: {error}")
         changed = self._changed_files(root, warnings) if changed_only else None
         findings = policy.apply(findings, changed)
+        suppressed_findings: list[Finding] = []
         if gemini_model:
             try:
                 findings = review(findings, root, gemini_model)
+                findings, suppressed_findings = suppress_likely_false_positives(findings)
+                if suppressed_findings:
+                    warnings.append(f"Gemini triage suppressed {len(suppressed_findings)} likely false-positive non-blocking finding(s); review them in the report.")
             except RuntimeError as error:
                 warnings.append(f"Gemini review skipped: {error}")
-        return AnalysisResult(findings, policy, tool_runs, warnings)
+        return AnalysisResult(findings, policy, tool_runs, warnings, suppressed_findings)
 
     @staticmethod
     def _discover_reports(root: Path) -> list[Path]:

@@ -8,3 +8,5 @@ class CompositeActionTests(unittest.TestCase):
         self.assertIn("gemini-model:", action)
         self.assertIn('"${GITHUB_ACTION_PATH}[gemini]"', action)
         self.assertIn("--gemini-model", action)
+        self.assertIn("comment-file:", action)
+        self.assertIn("--pr-comment", action)

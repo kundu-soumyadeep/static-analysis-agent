@@ -6,10 +6,12 @@ import unittest
 from android_static_agent.adapters import parse_report
 from android_static_agent.orchestrator import AnalysisAgent
 from android_static_agent.policy import Policy
-from android_static_agent.reports import markdown_summary, write_sarif
+from android_static_agent.reports import markdown_summary, pull_request_summary, write_sarif
 from android_static_agent.runner import ToolRun
 from android_static_agent import runner
 from android_static_agent.ai_reviewer import review
+from android_static_agent.ai_reviewer import suppress_likely_false_positives
+from android_static_agent.models import Finding
 
 
 class AgentTests(unittest.TestCase):
@@ -102,3 +104,34 @@ class AgentTests(unittest.TestCase):
         source = (Path(__file__).parents[1] / "src" / "android_static_agent" / "ai_reviewer.py").read_text(encoding="utf-8")
         self.assertIn("AutomaticFunctionCallingConfig(disable=True)", source)
         self.assertIn("client.close()", source)
+
+    def test_gemini_filter_only_suppresses_non_blocking_false_positives(self):
+        medium = Finding("MEDIUM", "medium", "Medium", "", "A.kt", 1, "", "", triage_status="likely_false_positive", triage_reason="Test source")
+        high = Finding("HIGH", "high", "High", "", "A.kt", 2, "", "", triage_status="likely_false_positive", triage_reason="Test source")
+        visible, suppressed = suppress_likely_false_positives([medium, high])
+        self.assertEqual([item.rule_id for item in visible], ["HIGH"])
+        self.assertEqual([item.rule_id for item in suppressed], ["MEDIUM"])
+
+    def test_gemini_review_automatically_filters_non_blocking_false_positives(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "A.kt").write_text('val endpoint = "http://example.com"', encoding="utf-8")
+            reviewed = [Finding("RULE", "medium", "Title", "", "A.kt", 1, "", "",
+                                triage_status="likely_false_positive", triage_reason="Test")]
+            from unittest.mock import patch
+            with patch("android_static_agent.orchestrator.review", return_value=reviewed):
+                result = AnalysisAgent().analyze(root, gemini_model="gemini-3.5-flash-lite")
+            self.assertEqual(result.findings, [])
+            self.assertEqual([item.rule_id for item in result.suppressed_findings], ["RULE"])
+
+    def test_pull_request_summary_is_compact_and_marks_suppressed_findings(self):
+        findings = [Finding("RULE", "medium", "Title", "A | B", "A.kt", 4, "", "Fix") for _ in range(21)]
+        suppressed = [Finding("SUPPRESSED", "low", "Title", "", "B.kt", 2, "", "", triage_status="likely_false_positive")]
+        report = pull_request_summary(findings, suppressed)
+        self.assertIn("<!-- android-static-analysis-agent -->", report)
+        self.assertIn("Gemini marked **1**", report)
+        self.assertIn("21 active finding", report)
+        self.assertIn("1 additional", report)
+        self.assertIn("A \\| B", report)
+        short_report = pull_request_summary(findings[:1])
+        self.assertNotIn("additional finding", short_report)

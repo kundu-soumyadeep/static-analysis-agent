@@ -16,6 +16,20 @@ android-static-agent /path/to/android-project --format json --output report.json
 android-static-agent /path/to/android-project --run-tools --sarif report.sarif --format markdown
 ```
 
+For the normal full CI-style run, use the short preset instead:
+
+```bash
+android-static-agent /path/to/android-project --ci
+```
+
+It runs external tools and writes `android-static-agent.md`,
+`android-static-agent.sarif`, and `android-static-agent-comment.md` into the
+Android project's root. Add Gemini triage when wanted:
+
+```bash
+android-static-agent /path/to/android-project --ci --gemini-model gemini-3.5-flash-lite
+```
+
 The command exits with status `1` when a finding meets the policy's `fail_on`
 threshold, which makes it suitable for CI.
 
@@ -58,9 +72,13 @@ versioned composite action from each Android application's own workflow:
 
 Copy [the consumer workflow](examples/consumer-workflow.yml) into the Android
 repository as `.github/workflows/android-static-analysis.yml`, replace
-`OWNER/REPOSITORY`, and pin it to a release tag or full commit SHA. Keep
+`OWNER/REPOSITORY`, and pin it to a release tag or full commit SHA. It runs on
+pull requests and pushes to `main`, uploads Markdown/SARIF artifacts, and keeps
+one compact, updated comment on each pull request. Keep
 `.android-static-agent/policy.json` and any baseline in the Android application
 repository, because the agent loads its policy from the scanned `path`.
+The example scans the whole project on every run. Set `changed-only: 'true'`
+when a faster, last-commit-only report is more useful.
 
 The workflow in this repository tests the agent package only. It does not try
 to scan the agent source as if it were an Android application.
@@ -71,6 +89,12 @@ to scan the agent source as if it were an Android application.
 `semgrep` and `gitleaks` binaries from the Android application's workspace.
 Their reports are normalized with built-in results. Or provide reports produced
 elsewhere with repeated `--report path`.
+
+Detekt runs only when the Android application already applies the Detekt Gradle
+plugin and exposes a `detekt` task. The workflow installs the executable tools,
+but deliberately does not alter the application's Gradle build. If the report
+says `Detekt skipped`, add and configure the Detekt Gradle plugin in that
+application repository, then verify `./gradlew detekt` succeeds locally.
 
 Use `--sarif report.sarif` to upload results to a code-scanning product, and
 `--format markdown` for a pull-request summary. A ready-to-copy Android
@@ -108,6 +132,11 @@ unavailable, analysis continues with a warning. The integration uses the
 When using the reusable GitHub Action, store the key as `GEMINI_API_KEY` in the
 Android application's GitHub Actions secrets and provide a `gemini-model` input.
 The action installs the optional Gemini dependency only when this input is set.
+
+When a Gemini model is configured, the agent automatically suppresses only
+Gemini-labelled `likely_false_positive` findings at `info`, `low`, or `medium`
+severity. Suppressed findings remain in JSON and Markdown for review; high and
+critical findings are never suppressed.
 
 ## Scope and limitations
 
