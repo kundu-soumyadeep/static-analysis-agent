@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 import re
+from math import log2
 from urllib.parse import urlsplit
 from xml.parsers import expat
 from typing import Iterable
@@ -9,7 +10,7 @@ from .models import Finding
 from .rules import Rule, RuleSet
 
 
-ANDROID_EXTENSIONS = {".java", ".kt", ".kts", ".xml", ".gradle", ".properties"}
+ANDROID_EXTENSIONS = {".java", ".kt", ".kts", ".xml", ".gradle", ".properties", ".json", ".yml", ".yaml", ".env", ".pem", ".key"}
 
 
 class AndroidAnalyzer:
@@ -85,7 +86,15 @@ class AndroidAnalyzer:
         elif rule.kind == "exposed_mutable" and rule.excludes and rule.excludes in line:
             return None
         elif rule.kind == "hardcoded_secret":
-            return self._finding(rule, relative, line_number, "Potential credential assignment [REDACTED]", name=match.group(1), redacted=True)
+            name = rule.secret_name or (match.group(1) if match.lastindex else "secret")
+            return self._finding(rule, relative, line_number, "Potential credential assignment [REDACTED]", name=name, redacted=True)
+        elif rule.kind == "high_entropy_secret":
+            candidate = next((item.group() for item in pattern.finditer(line)
+                              if self._is_high_entropy_secret(item.group(), rule.min_entropy)), None)
+            if not candidate:
+                return None
+            return self._finding(rule, relative, line_number, "Potential high-entropy credential [REDACTED]",
+                                 name=rule.secret_name or "credential", redacted=True)
         return self._finding(rule, relative, line_number, line, match=match.group(0))
 
     def _check_manifest(self, root: Path, path: Path, text: str, include_heuristics: bool) -> list[Finding]:
@@ -116,6 +125,22 @@ class AndroidAnalyzer:
             return urlsplit(match.group()).hostname not in {"localhost", "127.0.0.1", "::1"}
         except ValueError:
             return True
+
+    @staticmethod
+    def _is_high_entropy_secret(candidate: str, minimum: float) -> bool:
+        if candidate.lower().startswith(("http", "www", "android", "kotlin")):
+            return False
+        if re.fullmatch(r"[0-9a-fA-F]{24,}", candidate):
+            return False
+        classes = sum((any(character.islower() for character in candidate),
+                       any(character.isupper() for character in candidate),
+                       any(character.isdigit() for character in candidate),
+                       any(character in "_+=-" for character in candidate)))
+        if classes < 3:
+            return False
+        frequencies = {character: candidate.count(character) / len(candidate) for character in set(candidate)}
+        entropy = -sum(value * log2(value) for value in frequencies.values())
+        return entropy >= minimum
 
     @staticmethod
     def _finding(rule: Rule, filename: str, line_number: int, evidence: str, **values: str | bool) -> Finding:

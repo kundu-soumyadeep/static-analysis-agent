@@ -50,9 +50,25 @@ class AgentTests(unittest.TestCase):
             root = Path(directory)
             (root / "A.kt").write_text('val endpoint = "http://example.com"', encoding="utf-8")
             report = markdown_summary(AnalysisAgent().analyze(root).findings)
-            self.assertIn("## Finding details", report)
+            self.assertIn("## 🔎 Finding details", report)
             self.assertIn("**Source:** built-in", report)
             self.assertIn("**Recommended action:**", report)
+
+    def test_markdown_groups_categories_and_links_locations(self):
+        findings = [
+            Finding("ANDROID-SEC-001", "high", "Cleartext", "HTTP", "Network.kt", 8, "", "Use HTTPS."),
+            Finding("ANDROID-QUALITY-003", "medium", "Unused", "unused", "Main.kt", 3, "", "Remove it."),
+            Finding("ANDROID-QUALITY-003", "medium", "Unused", "unused", "Main.kt", 9, "", "Remove it."),
+        ]
+        report = markdown_summary(findings, source_url="https://github.example/acme/app/blob/abc123")
+        self.assertIn("[🔐 Security](#security-findings)", report)
+        self.assertIn("[🧹 Code quality](#code-quality-findings)", report)
+        self.assertIn("2 locations", report)
+        self.assertIn("https://github.example/acme/app/blob/abc123/Main.kt#L3", report)
+        self.assertIn('width="64%">Summary', report)
+        self.assertIn("View details", report)
+        self.assertIn("View grouped details", report)
+        self.assertIn("2 related locations", report)
 
     def test_unused_and_exposed_property_rules(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -139,10 +155,10 @@ class AgentTests(unittest.TestCase):
         repeated = [Finding("SEMGREP", "medium", "Mutable action", "Pin the action.", f"workflow-{number}.yml", number, "", "Use a commit SHA.", "Semgrep") for number in range(3)]
         grouped_report = pull_request_summary(repeated, source_url="https://github.example/acme/app/blob/abc123")
         self.assertIn("3 locations", grouped_report)
-        self.assertEqual(grouped_report.count("<tr><td>medium"), 1)
+        self.assertEqual(grouped_report.count("<tr><td>🟡 medium"), 1)
         unused = [Finding("UNUSED", "medium", "Potential unused local variable", "", "Main.kt", number, "", "Remove it.") for number in range(3)]
         unused_report = pull_request_summary(unused)
         self.assertIn("3 related potential unused local variable findings in Main.kt", unused_report)
-        self.assertEqual(unused_report.count("<tr><td>medium"), 1)
+        self.assertEqual(unused_report.count("<tr><td>🟡 medium"), 1)
         short_report = pull_request_summary(findings[:1])
         self.assertNotIn("additional finding", short_report)

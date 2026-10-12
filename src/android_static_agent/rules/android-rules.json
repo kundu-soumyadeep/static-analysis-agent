@@ -21,6 +21,86 @@
       "pattern": "\\b(api[_-]?key|secret|password|token)\\s*[:=]\\s*['\\\"][^'\\\"]{8,}['\\\"]"
     },
     {
+      "id": "ANDROID-SEC-011",
+      "kind": "hardcoded_secret",
+      "severity": "high",
+      "title": "Potential Google API key exposure",
+      "message": "Potential hardcoded {name} [REDACTED]",
+      "remediation": "Remove the key from source and Git history, revoke or rotate it immediately, and restrict the replacement key to the required Android package name and signing certificate.",
+      "pattern": "\\bAIza[0-9A-Za-z_-]{35}\\b",
+      "extensions": [".kt", ".java", ".kts", ".gradle", ".properties", ".xml", ".yml", ".yaml"],
+      "secret_name": "Google API key"
+    },
+    {
+      "id": "ANDROID-SEC-012",
+      "kind": "hardcoded_secret",
+      "severity": "high",
+      "title": "Potential GitHub token exposure",
+      "message": "Potential hardcoded {name} [REDACTED]",
+      "remediation": "Revoke the token, remove it from source and Git history, then use a short-lived GitHub Actions token or a repository secret with the minimum required permissions.",
+      "pattern": "\\b(?:gh[pousr]_[A-Za-z0-9_]{30,255}|github_pat_[A-Za-z0-9_]{20,255})\\b",
+      "extensions": [".kt", ".java", ".kts", ".gradle", ".properties", ".json", ".yml", ".yaml", ".env"],
+      "secret_name": "GitHub token"
+    },
+    {
+      "id": "ANDROID-SEC-013",
+      "kind": "hardcoded_secret",
+      "severity": "high",
+      "title": "Potential cloud access key exposure",
+      "message": "Potential hardcoded {name} [REDACTED]",
+      "remediation": "Deactivate or rotate the key immediately, remove it from source and Git history, and use workload identity or short-lived credentials instead.",
+      "pattern": "\\b(?:AKIA|ASIA)[0-9A-Z]{16}\\b",
+      "extensions": [".kt", ".java", ".kts", ".gradle", ".properties", ".json", ".yml", ".yaml", ".env"],
+      "secret_name": "cloud access key"
+    },
+    {
+      "id": "ANDROID-SEC-014",
+      "kind": "hardcoded_secret",
+      "severity": "high",
+      "title": "Potential GitLab token exposure",
+      "message": "Potential hardcoded {name} [REDACTED]",
+      "remediation": "Revoke the token, remove it from source and Git history, and replace it with a least-privilege secret managed by the CI platform.",
+      "pattern": "\\bglpat-[A-Za-z0-9_-]{20,}\\b",
+      "extensions": [".kt", ".java", ".kts", ".gradle", ".properties", ".json", ".yml", ".yaml", ".env"],
+      "secret_name": "GitLab token"
+    },
+    {
+      "id": "ANDROID-SEC-015",
+      "kind": "hardcoded_secret",
+      "severity": "high",
+      "title": "Potential Slack or Stripe secret exposure",
+      "message": "Potential hardcoded {name} [REDACTED]",
+      "remediation": "Revoke or rotate the credential, remove it from source and Git history, and load the replacement from a secret manager or CI secret.",
+      "pattern": "\\b(?:xox[baprs]-[A-Za-z0-9-]{10,}|(?:sk|rk)_(?:live|test)_[A-Za-z0-9]{16,})\\b",
+      "extensions": [".kt", ".java", ".kts", ".gradle", ".properties", ".json", ".yml", ".yaml", ".env"],
+      "secret_name": "service credential"
+    },
+    {
+      "id": "ANDROID-SEC-016",
+      "kind": "hardcoded_secret",
+      "severity": "critical",
+      "title": "Private key material exposure",
+      "message": "Potential hardcoded {name} [REDACTED]",
+      "remediation": "Revoke or replace the private key immediately, remove it from source and Git history, and store replacement material in a dedicated secret manager.",
+      "pattern": "-----BEGIN (?:RSA |EC |OPENSSH |)?PRIVATE KEY-----",
+      "extensions": [".kt", ".java", ".kts", ".gradle", ".properties", ".json", ".yml", ".yaml", ".env", ".pem", ".key"],
+      "secret_name": "private key"
+    },
+    {
+      "id": "ANDROID-SEC-017",
+      "kind": "high_entropy_secret",
+      "severity": "medium",
+      "title": "Potential high-entropy credential exposure",
+      "message": "Potential hardcoded {name} [REDACTED]",
+      "remediation": "Confirm whether this is a credential. If it is, rotate it, remove it from source and Git history, and store its replacement outside the repository.",
+      "pattern": "(?<![A-Za-z0-9])[A-Za-z0-9_+=-]{24,}(?![A-Za-z0-9])",
+      "extensions": [".kt", ".java", ".kts", ".gradle", ".properties", ".json", ".yml", ".yaml", ".env"],
+      "secret_name": "credential",
+      "min_entropy": 3.5,
+      "confidence": "low",
+      "heuristic": true
+    },
+    {
       "id": "ANDROID-QUALITY-001",
       "kind": "regex",
       "severity": "medium",

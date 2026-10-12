@@ -39,7 +39,7 @@ def main() -> int:
     result = AnalysisAgent().analyze(root, policy_path=args.policy,
         report_paths=[path.resolve() for path in args.report], run_external_tools=args.run_tools,
         changed_only=args.changed_only, gemini_model=args.gemini_model, rules_path=args.rules)
-    report = _render(root, result.findings, result.suppressed_findings, args.output_format, result.warnings)
+    report = _render(root, result.findings, result.suppressed_findings, args.output_format, result.warnings, args.source_url)
     if args.output:
         args.output.write_text(report + "\n", encoding="utf-8")
     else:
@@ -51,11 +51,11 @@ def main() -> int:
     return 1 if result.policy.should_fail(result.findings) else 0
 
 
-def _render(root: Path, findings: list, suppressed_findings: list, output_format: str, warnings: list[str]) -> str:
+def _render(root: Path, findings: list, suppressed_findings: list, output_format: str, warnings: list[str], source_url: str | None = None) -> str:
     if output_format == "json":
         return json.dumps({"findings": [finding.to_dict() for finding in findings], "suppressed_findings": [finding.to_dict() for finding in suppressed_findings], "warnings": warnings}, indent=2)
     if output_format == "markdown":
-        return markdown_summary(findings, suppressed_findings) + ("\n\nWarnings:\n" + "\n".join(f"- {warning}" for warning in warnings) if warnings else "")
+        return markdown_summary(findings, suppressed_findings, source_url) + ("\n\nWarnings:\n" + "\n".join(f"- {warning}" for warning in warnings) if warnings else "")
     lines = [f"Android static analysis: {root}",
              f"Findings: {len(findings)}", f"Gemini-suppressed findings: {len(suppressed_findings)}", ""]
     for finding in findings:

@@ -8,7 +8,7 @@ import re
 
 
 DEFAULT_RULES = Path(__file__).parent / "rules" / "android-rules.json"
-SUPPORTED_KINDS = {"regex", "remote_http", "hardcoded_secret", "unused_assignment", "exposed_mutable", "manifest_attribute_true"}
+SUPPORTED_KINDS = {"regex", "remote_http", "hardcoded_secret", "high_entropy_secret", "unused_assignment", "exposed_mutable", "manifest_attribute_true"}
 
 
 @dataclass(frozen=True)
@@ -25,6 +25,8 @@ class Rule:
     attribute: str | None = None
     confidence: str = "high"
     excludes: str | None = None
+    secret_name: str | None = None
+    min_entropy: float = 0.0
 
     def applies_to(self, path: Path) -> bool:
         return not self.extensions or path.suffix in self.extensions
@@ -66,5 +68,5 @@ def _read_bundle(path: Path) -> list[Rule]:
         if item["id"] in seen or item["kind"] not in SUPPORTED_KINDS:
             raise ValueError(f"Invalid or duplicate rule {item['id']} in {path}")
         seen.add(item["id"])
-        rules.append(Rule(item["id"], item["kind"], item["severity"], item["title"], item["message"], item["remediation"], item.get("pattern"), tuple(item.get("extensions", [])), bool(item.get("heuristic", False)), item.get("attribute"), item.get("confidence", "high"), item.get("excludes")))
+        rules.append(Rule(item["id"], item["kind"], item["severity"], item["title"], item["message"], item["remediation"], item.get("pattern"), tuple(item.get("extensions", [])), bool(item.get("heuristic", False)), item.get("attribute"), item.get("confidence", "high"), item.get("excludes"), item.get("secret_name"), float(item.get("min_entropy", 0.0))))
     return rules

@@ -39,6 +39,25 @@ class AnalyzerTests(unittest.TestCase):
         self.assertNotIn("private-credential-value",
                          str(findings[0].to_dict()))
 
+    def test_google_api_key_in_a_comment_is_reported_and_redacted(self):
+        key = "AIza" + "A" * 35
+        findings = self.analyze_text("build.gradle.kts", f"// {key}")
+        google_key_finding = next(item for item in findings if item.rule_id == "ANDROID-SEC-011")
+        self.assertNotIn(key, str(google_key_finding.to_dict()))
+        self.assertEqual(google_key_finding.severity, "high")
+
+    def test_known_and_unknown_secrets_in_comments_are_redacted(self):
+        github_token = "ghp_" + "A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8"
+        unknown_token = "Ab1cDe2fGh3iJk4lMn5oPq6rSt7uVw8xYz9_+="
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "build.gradle.kts").write_text(f"// {github_token}\n// {unknown_token}", encoding="utf-8")
+            findings = AndroidAnalyzer().analyze(root, include_heuristics=True)
+        rule_ids = {item.rule_id for item in findings}
+        self.assertTrue({"ANDROID-SEC-012", "ANDROID-SEC-017"}.issubset(rule_ids))
+        self.assertNotIn(github_token, str([item.to_dict() for item in findings]))
+        self.assertNotIn(unknown_token, str([item.to_dict() for item in findings]))
+
     def test_localhost_prefix_cannot_hide_remote_url(self):
         findings = self.analyze_text("Example.kt", '''
 val local = "http://localhost:8080"

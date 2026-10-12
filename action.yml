@@ -88,7 +88,7 @@ runs:
         set -e
 
         if [ "$CHANGED_ONLY" = "true" ]; then
-          repository_args=("$APP_PATH" --format markdown --output "$APP_PATH/$REPOSITORY_MARKDOWN_FILE")
+          repository_args=("$APP_PATH" --format markdown --output "$APP_PATH/$REPOSITORY_MARKDOWN_FILE" --source-url "$source_url")
           if [ -n "$POLICY_PATH" ]; then repository_args+=(--policy "$POLICY_PATH"); fi
           if [ -n "$RULES_PATH" ]; then repository_args+=(--rules "$RULES_PATH"); fi
           set +e
