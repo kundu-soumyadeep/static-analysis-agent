@@ -104,6 +104,7 @@ class AgentTests(unittest.TestCase):
         source = (Path(__file__).parents[1] / "src" / "android_static_agent" / "ai_reviewer.py").read_text(encoding="utf-8")
         self.assertIn("AutomaticFunctionCallingConfig(disable=True)", source)
         self.assertIn("client.close()", source)
+        self.assertIn("Prioritize security impact", source)
 
     def test_gemini_filter_only_suppresses_non_blocking_false_positives(self):
         medium = Finding("MEDIUM", "medium", "Medium", "", "A.kt", 1, "", "", triage_status="likely_false_positive", triage_reason="Test source")
@@ -125,7 +126,7 @@ class AgentTests(unittest.TestCase):
             self.assertEqual([item.rule_id for item in result.suppressed_findings], ["RULE"])
 
     def test_pull_request_summary_is_compact_and_marks_suppressed_findings(self):
-        findings = [Finding("RULE", "medium", "Title", "A | B", "A.kt", 4, "", "Fix") for _ in range(21)]
+        findings = [Finding("RULE", "medium", "Title", "A | B", f"A-{number}.kt", 4, "", "Fix") for number in range(21)]
         suppressed = [Finding("SUPPRESSED", "low", "Title", "", "B.kt", 2, "", "", triage_status="likely_false_positive")]
         report = pull_request_summary(findings, suppressed, "https://github.example/acme/app/blob/abc123")
         self.assertIn("<!-- android-static-analysis-agent -->", report)
@@ -133,7 +134,15 @@ class AgentTests(unittest.TestCase):
         self.assertIn("21 active finding", report)
         self.assertIn("1 additional", report)
         self.assertIn("A | B", report)
-        self.assertIn("https://github.example/acme/app/blob/abc123/A.kt#L4", report)
+        self.assertIn("https://github.example/acme/app/blob/abc123/A-0.kt#L4", report)
         self.assertIn('width="64%"', report)
+        repeated = [Finding("SEMGREP", "medium", "Mutable action", "Pin the action.", f"workflow-{number}.yml", number, "", "Use a commit SHA.", "Semgrep") for number in range(3)]
+        grouped_report = pull_request_summary(repeated, source_url="https://github.example/acme/app/blob/abc123")
+        self.assertIn("3 locations", grouped_report)
+        self.assertEqual(grouped_report.count("<tr><td>medium"), 1)
+        unused = [Finding("UNUSED", "medium", "Potential unused local variable", "", "Main.kt", number, "", "Remove it.") for number in range(3)]
+        unused_report = pull_request_summary(unused)
+        self.assertIn("3 related potential unused local variable findings in Main.kt", unused_report)
+        self.assertEqual(unused_report.count("<tr><td>medium"), 1)
         short_report = pull_request_summary(findings[:1])
         self.assertNotIn("additional finding", short_report)

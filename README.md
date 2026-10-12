@@ -82,6 +82,12 @@ only changed files; Gitleaks inspects the latest commit range. Android Lint and
 Detekt remain project-level Gradle tasks, then only their findings in changed
 files are published.
 
+The workflow also creates `android-static-agent-repository.md`. It inventories
+findings across the whole repository for the Actions job summary and artifact;
+the PR/commit comment and failure gate remain scoped to changed files. This
+keeps a small change from failing because of unrelated existing debt while
+still showing the team the repository-wide security and quality backlog.
+
 On a pull-request run, the workflow updates the comment in that pull request's
 **Conversation** tab. On a push run, it creates a comment on the pushed commit:
 open the repository's **Commits** list and select that commit. Every run also

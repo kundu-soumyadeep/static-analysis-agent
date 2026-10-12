@@ -79,6 +79,53 @@
       "confidence": "medium"
     },
     {
+      "id": "ANDROID-SEC-007",
+      "kind": "regex",
+      "severity": "high",
+      "title": "WebView universal file URL access enabled",
+      "message": "WebView universal access from file URLs can let local content reach arbitrary web origins.",
+      "remediation": "Remove setAllowUniversalAccessFromFileURLs(true). If a legacy use case requires it, isolate the WebView, load only trusted content, and document the exception.",
+      "pattern": "setAllowUniversalAccessFromFileURLs\\s*\\(\\s*true\\s*\\)",
+      "extensions": [".kt", ".java"],
+      "heuristic": true
+    },
+    {
+      "id": "ANDROID-SEC-008",
+      "kind": "regex",
+      "severity": "medium",
+      "title": "WebView JavaScript bridge requires review",
+      "message": "A JavaScript bridge exposes native application methods to WebView content.",
+      "remediation": "Expose only a minimal, annotated bridge to trusted content and do not load untrusted URLs in the same WebView.",
+      "pattern": "addJavascriptInterface\\s*\\(",
+      "extensions": [".kt", ".java"],
+      "heuristic": true,
+      "confidence": "medium"
+    },
+    {
+      "id": "ANDROID-SEC-009",
+      "kind": "regex",
+      "severity": "medium",
+      "title": "Exported Android component requires review",
+      "message": "An exported component may be callable by other applications.",
+      "remediation": "Set android:exported to false unless external access is required; otherwise protect the component with an appropriate permission and validate all input.",
+      "pattern": "android:exported\\s*=\\s*[\"']true[\"']",
+      "extensions": [".xml"],
+      "heuristic": true,
+      "confidence": "medium"
+    },
+    {
+      "id": "ANDROID-SEC-010",
+      "kind": "regex",
+      "severity": "medium",
+      "title": "Android backup enabled requires review",
+      "message": "Application backup can copy data to user-controlled or cloud-backed storage.",
+      "remediation": "Set android:allowBackup to false for apps handling sensitive data, or configure backup rules to exclude credentials and private records.",
+      "pattern": "android:allowBackup\\s*=\\s*[\"']true[\"']",
+      "extensions": [".xml"],
+      "heuristic": true,
+      "confidence": "medium"
+    },
+    {
       "id": "ANDROID-SEC-003",
       "kind": "manifest_attribute_true",
       "severity": "high",

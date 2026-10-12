@@ -98,3 +98,11 @@ val mixed = "http://127.0.0.1" + "http://example.com"
             (root / "Unchanged.kt").write_text('val endpoint = "http://example.com"', encoding="utf-8")
             findings = AndroidAnalyzer().analyze(root, selected_files={"Changed.kt"})
             self.assertEqual({finding.file for finding in findings}, {"Changed.kt"})
+
+    def test_security_rules_detect_webview_bridge_and_exported_component(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "Web.kt").write_text("webView.addJavascriptInterface(bridge, \"bridge\")", encoding="utf-8")
+            (root / "AndroidManifest.xml").write_text('<manifest><activity android:exported="true" /></manifest>', encoding="utf-8")
+            rules = {finding.rule_id for finding in AndroidAnalyzer().analyze(root, include_heuristics=True)}
+            self.assertTrue({"ANDROID-SEC-008", "ANDROID-SEC-009"}.issubset(rules))

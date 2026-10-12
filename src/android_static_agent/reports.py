@@ -60,7 +60,7 @@ def pull_request_summary(findings: list[Finding], suppressed_findings: list[Find
                        for severity in ("critical", "high", "medium", "low", "info")}
     badges = " · ".join(f"{severity}: {count}" for severity, count in severity_counts.items() if count)
     lines = ["<!-- android-static-analysis-agent -->", "## Android static analysis", "",
-             "This report covers findings introduced by the files selected for this run.", "",
+             "This report lists findings located in files changed by this run. Related findings in one file are grouped for readability; expand their locations to inspect each line. The workflow summary also contains a separate repository-wide inventory.", "",
              f"**{len(findings)} active finding(s)**{f' · {badges}' if badges else ''}."]
     if suppressed_findings:
         lines.append(f"Gemini marked **{len(suppressed_findings)}** non-blocking finding(s) as likely false positives. They remain visible in the detailed report for review.")
@@ -68,11 +68,16 @@ def pull_request_summary(findings: list[Finding], suppressed_findings: list[Find
         lines.append("No active findings remain after policy and baseline filtering. This run passes the analysis gate.")
         return "\n\n".join(lines)
     lines.extend(["", "<table>", "<thead><tr><th width=\"8%\">Severity</th><th width=\"14%\">Rule</th><th width=\"14%\">Location</th><th width=\"64%\">Finding</th></tr></thead>", "<tbody>"])
-    for item in findings[:20]:
-        location = _finding_link(item, source_url)
-        lines.append(f"<tr><td>{escape(item.severity)}</td><td><code>{escape(item.rule_id)}</code></td><td>{location}</td><td>{escape(item.message)}</td></tr>")
+    groups = _comment_groups(findings)
+    shown_count = 0
+    for group in groups[:20]:
+        item = group[0]
+        shown_count += len(group)
+        location = _group_location_links(group, source_url)
+        message = _group_message(group)
+        lines.append(f"<tr><td>{escape(item.severity)}</td><td><code>{escape(item.rule_id)}</code></td><td>{location}</td><td>{escape(message)}</td></tr>")
     lines.append("</tbody></table>")
-    remaining = max(0, len(findings) - 20)
+    remaining = max(0, len(findings) - shown_count)
     if remaining:
         lines.extend(["", f"_The detailed workflow report contains {remaining} additional active finding(s), including evidence and recommended remediation._"])
     lines.extend(["", "<details>", "<summary>How to read this report</summary>", "",
@@ -87,6 +92,38 @@ def _finding_link(item: Finding, source_url: str | None) -> str:
         return f"<code>{escape(label)}</code>"
     target = f"{source_url.rstrip('/')}/{quote(item.file, safe='/')}#L{item.line}"
     return f'<a href="{escape(target, quote=True)}">{escape(label)}</a>'
+
+
+def _comment_groups(findings: list[Finding]) -> list[list[Finding]]:
+    """Collapse related findings while retaining a link to each affected line."""
+    grouped: dict[tuple[str, str, str, str], list[Finding]] = {}
+    for index, item in enumerate(findings):
+        tool = item.source_tool.split("+", 1)[0]
+        # Semgrep's one rule commonly flags the same supply-chain issue across
+        # several workflow files. Other tools are grouped only within one file.
+        scope = "repository" if tool == "Semgrep" else item.file
+        key = (tool, item.rule_id, item.severity, scope)
+        grouped.setdefault(key, []).append(item)
+    return list(grouped.values())
+
+
+def _group_location_links(group: list[Finding], source_url: str | None) -> str:
+    if len(group) == 1:
+        return _finding_link(group[0], source_url)
+    links = "<br>".join(_finding_link(item, source_url) for item in group)
+    return f"<details><summary>{len(group)} locations</summary>{links}</details>"
+
+
+def _group_message(group: list[Finding]) -> str:
+    item = group[0]
+    if len(group) == 1:
+        return item.message
+    if item.source_tool.split("+", 1)[0] == "Semgrep":
+        scope = "across the changed files"
+    else:
+        scope = f"in {Path(item.file).name}"
+    return (f"{len(group)} related {item.title.lower()} findings {scope}. "
+            f"Review the linked lines together. Recommended action: {item.remediation}")
 
 
 def _sarif_level(severity: str) -> str:

@@ -89,7 +89,13 @@ jobs:
         if: always()
         run: |
           if [ -f android-static-agent.md ]; then
+            echo "# Findings in changed files" >> "$GITHUB_STEP_SUMMARY"
             cat android-static-agent.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if [ -f android-static-agent-repository.md ]; then
+            echo "# Findings across the repository" >> "$GITHUB_STEP_SUMMARY"
+            echo "This inventory provides repository context. The analysis gate and commit/PR comment use only findings in changed files." >> "$GITHUB_STEP_SUMMARY"
+            cat android-static-agent-repository.md >> "$GITHUB_STEP_SUMMARY"
           fi
       - uses: github/codeql-action/upload-sarif@v4
         if: always()
@@ -103,6 +109,7 @@ jobs:
             android-static-agent.sarif
             android-static-agent.md
             android-static-agent-comment.md
+            android-static-agent-repository.md
       - name: Enforce analysis policy
         if: steps.analysis.outcome == 'failure'
         run: exit 1

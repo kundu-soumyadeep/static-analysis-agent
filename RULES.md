@@ -62,6 +62,10 @@ the minimal `AndroidAnalyzer` API.
 | `ANDROID-QUALITY-004` | `exposed_mutable` | Kotlin mutable property without private visibility |
 | `ANDROID-SEC-005` | `regex` | WebView JavaScript enabled |
 | `ANDROID-SEC-006` | `regex` | Custom TLS validation needing review |
+| `ANDROID-SEC-007` | `regex` | WebView universal file URL access enabled |
+| `ANDROID-SEC-008` | `regex` | WebView JavaScript bridge needing review |
+| `ANDROID-SEC-009` | `regex` | Exported Android component needing access-control review |
+| `ANDROID-SEC-010` | `regex` | Enabled Android backup needing data-exposure review |
 | `ANDROID-SEC-003` | `manifest_attribute_true` | Debuggable application manifest |
 | `ANDROID-SEC-004` | `manifest_attribute_true` | Cleartext traffic enabled in manifest |
 | `ANDROID-QUALITY-002` | `manifest_attribute_true` | Test-only application manifest |

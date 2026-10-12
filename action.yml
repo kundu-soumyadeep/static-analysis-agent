@@ -33,6 +33,10 @@ inputs:
     description: Compact pull-request comment path relative to the Android application.
     required: false
     default: android-static-agent-comment.md
+  repository-markdown-file:
+    description: Whole-repository Markdown report path relative to the Android application.
+    required: false
+    default: android-static-agent-repository.md
   gemini-model:
     description: Optional Gemini model used to explain and assign confidence to findings.
     required: false
@@ -47,6 +51,9 @@ outputs:
   comment-file:
     description: Compact pull-request comment path relative to the Android application.
     value: ${{ inputs.comment-file }}
+  repository-markdown-file:
+    description: Whole-repository Markdown report path relative to the Android application.
+    value: ${{ inputs.repository-markdown-file }}
 runs:
   using: composite
   steps:
@@ -60,6 +67,7 @@ runs:
         SARIF_FILE: ${{ inputs.sarif-file }}
         MARKDOWN_FILE: ${{ inputs.markdown-file }}
         COMMENT_FILE: ${{ inputs.comment-file }}
+        REPOSITORY_MARKDOWN_FILE: ${{ inputs.repository-markdown-file }}
         GEMINI_MODEL: ${{ inputs.gemini-model }}
       run: |
         if [ -n "$GEMINI_MODEL" ]; then
@@ -74,4 +82,19 @@ runs:
         if [ -n "$POLICY_PATH" ]; then args+=(--policy "$POLICY_PATH"); fi
         if [ -n "$RULES_PATH" ]; then args+=(--rules "$RULES_PATH"); fi
         if [ -n "$GEMINI_MODEL" ]; then args+=(--gemini-model "$GEMINI_MODEL"); fi
+        set +e
         android-static-agent "${args[@]}"
+        analysis_exit=$?
+        set -e
+
+        if [ "$CHANGED_ONLY" = "true" ]; then
+          repository_args=("$APP_PATH" --format markdown --output "$APP_PATH/$REPOSITORY_MARKDOWN_FILE")
+          if [ -n "$POLICY_PATH" ]; then repository_args+=(--policy "$POLICY_PATH"); fi
+          if [ -n "$RULES_PATH" ]; then repository_args+=(--rules "$RULES_PATH"); fi
+          set +e
+          android-static-agent "${repository_args[@]}"
+          set -e
+        else
+          cp "$APP_PATH/$MARKDOWN_FILE" "$APP_PATH/$REPOSITORY_MARKDOWN_FILE"
+        fi
+        exit "$analysis_exit"

@@ -18,8 +18,9 @@ REVIEW_SCHEMA = {
             "disposition": {"type": "string", "enum": ["confirmed", "review_needed", "likely_false_positive"]},
             "reason": {"type": "string"},
             "explanation": {"type": "string"},
+            "recommendation": {"type": "string"},
         },
-        "required": ["fingerprint", "confidence", "disposition", "reason", "explanation"],
+        "required": ["fingerprint", "confidence", "disposition", "reason", "explanation", "recommendation"],
     },
 }
 
@@ -45,7 +46,8 @@ def review(findings: list[Finding], root: Path, model: str) -> list[Finding]:
         "the evidence supports the finding, `review_needed` when it is uncertain, and "
         "`likely_false_positive` only when the evidence specifically proves this is a test, "
         "documentation example, generated code, or another non-production case. Explain "
-        "only from supplied evidence; do not claim code was executed. Findings:\n" + json.dumps(payload))
+        "only from supplied evidence; do not claim code was executed. Prioritize security impact: credentials, authentication, authorization, insecure networking, unsafe WebView use, cryptography, data exposure, dependency and CI supply-chain risks. "
+        "For `explanation`, state the concrete risk and why it matters. Never merely restate the file or line number. For `recommendation`, give a specific, actionable remediation appropriate to the finding. Findings:\n" + json.dumps(payload))
     client = genai.Client(api_key=key)
     try:
         response = client.models.generate_content(
@@ -67,11 +69,13 @@ def review(findings: list[Finding], root: Path, model: str) -> list[Finding]:
         explanation = review_data.get("explanation")
         disposition = review_data.get("disposition")
         reason = review_data.get("reason")
+        recommendation = review_data.get("recommendation")
         enriched.append(Finding(**{**item.to_dict(),
                                    "message": explanation if isinstance(explanation, str) else item.message,
                                    "confidence": confidence if confidence in {"low", "medium", "high"} else item.confidence,
                                    "triage_status": disposition if disposition in {"confirmed", "review_needed", "likely_false_positive"} else "review_needed",
                                    "triage_reason": reason if isinstance(reason, str) else "Gemini did not provide a triage reason.",
+                                   "remediation": recommendation if isinstance(recommendation, str) and recommendation.strip() else item.remediation,
                                    "source_tool": item.source_tool + "+Gemini"}))
     return enriched
 
